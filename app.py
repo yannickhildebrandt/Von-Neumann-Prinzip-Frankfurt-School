@@ -1,520 +1,782 @@
 import streamlit as st
 import pandas as pd
+import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
 
-# ------------------------------------------------------
-# Seiteneinstellungen & Formatierung
-# ------------------------------------------------------
+# ------------------------------------------------------------------
+# Seiteneinstellungen & globales Styling
+# ------------------------------------------------------------------
 st.set_page_config(
-    layout="wide",
-    page_title="Von-Neumann-Mindset",
-    page_icon="🧠"
+    page_title="Von Neumann Discovery Lab",
+    page_icon="🧠",
+    layout="wide"
 )
 
 st.markdown(
     """
     <style>
         body {
-            background: radial-gradient(circle at top, #0b1230 0%, #03060f 60%);
-            color: #e8ecff;
-            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top left, #0f172a, #020617 65%);
+            color: #e8ecf9;
+            font-family: "Inter", sans-serif;
         }
         .block-container {
-            padding-top: 2rem;
+            padding-top: 2.5rem;
             padding-bottom: 3rem;
+            max-width: 1300px;
         }
-        .headline-gradient {
+        .hero-title {
             font-size: 3.4rem;
             font-weight: 900;
-            background: -webkit-linear-gradient(120deg, #4ce3f7, #8bff8e);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 0.4rem;
+            background: -webkit-linear-gradient(120deg, #38f9d7, #43e7fe);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-align: center;
-            margin-bottom: .4rem;
         }
-        .subheadline {
+        .hero-subtitle {
             text-align: center;
-            font-size: 1.25rem;
-            color: #aab6ff;
-            margin-bottom: 2.6rem;
-            letter-spacing: 0.7px;
+            font-size: 1.15rem;
+            color: #9fb4ff;
+            margin-bottom: 2rem;
         }
-        .intro-card, .story-card {
+        .mission-card, .story-card {
             border-radius: 18px;
             padding: 1.6rem 2rem;
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(140,190,255,0.18);
-            box-shadow: 0 18px 55px rgba(12,30,70,0.45);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(92, 156, 255, 0.25);
+            box-shadow: 0 25px 60px rgba(2, 15, 45, 0.45);
+            margin-bottom: 1.5rem;
         }
-        .intro-card {
-            background: linear-gradient(140deg, rgba(60,90,220,0.35), rgba(24,140,180,0.28));
-            margin-bottom: 1.4rem;
+        .mission-card {
+            background: linear-gradient(135deg, rgba(24, 55, 104, 0.55), rgba(33, 83, 115, 0.55));
         }
         .story-card {
-            background: linear-gradient(160deg, rgba(12,25,55,0.90), rgba(25,38,85,0.75));
-            margin-bottom: 2rem;
+            background: linear-gradient(140deg, rgba(10, 22, 52, 0.8), rgba(27, 86, 109, 0.55));
+        }
+        .intro-block {
+            border-radius: 16px;
+            padding: 1.2rem 1.6rem;
+            margin-bottom: 1.1rem;
+            background: linear-gradient(125deg, rgba(64, 93, 230, 0.35), rgba(103, 219, 255, 0.15));
+            border: 1px solid rgba(155, 225, 255, 0.25);
         }
         .image-frame {
             width: 100%;
-            padding-top: 56%;
-            border-radius: 20px;
+            padding-top: 54%;
+            border-radius: 18px;
             background-size: cover;
             background-position: center;
-            box-shadow: 0 24px 60px rgba(8,12,30,0.55);
+            box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
             margin-bottom: 0.8rem;
         }
         .image-caption {
             text-align: center;
-            color: #aab6ff;
             font-size: 0.95rem;
+            color: #9fb4ff;
             margin-bottom: 1.6rem;
         }
-        .metric-container .stMetric {
-            background: rgba(7,12,30,0.75);
-            border-radius: 16px;
-            padding: 1.1rem;
-            box-shadow: inset 0 0 0 1px rgba(140,210,255,0.25);
+        .metric-grid div[data-testid="stMetricValue"] {
+            font-size: 1.6rem;
         }
-        .highlight-bubble {
-            background: rgba(82,255,196,0.14);
-            border-left: 4px solid #52ffc4;
-            padding: 1rem 1.3rem;
-            border-radius: 12px;
-            margin-top: 1.5rem;
-            color: #d7fff3;
-        }
-        .footer-message {
+        .footer {
             text-align: center;
-            font-size: 1.1rem;
-            color: #8bff8e;
+            padding-top: 2rem;
             font-weight: 600;
+            color: #43e7fe;
         }
-        .stExpander {
-            background: rgba(10,16,36,0.6) !important;
+        .stSelectbox label, .stSlider label, .stNumberInput label {
+            font-weight: 600;
+            color: #d7e1ff;
+        }
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 1.2rem;
+        }
+        .stTabs [data-baseweb="tab"] {
+            height: 50px;
+            border-radius: 12px;
+            padding: 0 1.4rem;
+            background: rgba(13, 32, 70, 0.6);
+            color: #9fb4ff;
+        }
+        .stTabs [aria-selected="true"] {
+            background: rgba(47, 207, 207, 0.35)!important;
+            color: #ffffff!important;
+        }
+        .code-bubble {
+            background: rgba(8, 24, 58, 0.9);
+            border-left: 4px solid #43e7fe;
+            padding: 0.9rem 1.2rem;
+            border-radius: 12px;
+            font-family: "Source Code Pro", monospace;
+            margin-top: 0.7rem;
+            margin-bottom: 0.7rem;
+        }
+        .highlight {
+            color: #43e7fe;
+            font-weight: 700;
         }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# ------------------------------------------------------
-# Hilfsfunktionen
-# ------------------------------------------------------
-def format_number(value, decimals=0):
-    return f"{value:,.{decimals}f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-def render_intro(text):
-    st.markdown(f"<div class='intro-card'>{text}</div>", unsafe_allow_html=True)
-
-def render_cover(url, caption):
+# ------------------------------------------------------------------
+# Utility-Funktionen
+# ------------------------------------------------------------------
+def render_cover(url: str, caption: str):
     st.markdown(
         f"""
-        <div class="image-frame" style="background-image:url('{url}');"></div>
+        <div class="image-frame" style="background-image: url('{url}');"></div>
         <p class="image-caption">{caption}</p>
         """,
         unsafe_allow_html=True
     )
 
-# ------------------------------------------------------
-# Hero-Bereich
-# ------------------------------------------------------
-st.markdown('<div class="headline-gradient">Von-Neumann-Mindset</div>', unsafe_allow_html=True)
+def human_number(value: float):
+    thresholds = [
+        (1e12, " Bio."),
+        (1e9, " Mrd."),
+        (1e6, " Mio."),
+        (1e3, " Tsd.")
+    ]
+    for threshold, suffix in thresholds:
+        if abs(value) >= threshold:
+            return f"{value / threshold:,.1f}".replace(",", "X").replace(".", ",").replace("X", ".") + suffix
+    return f"{value:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+def format_number(value, decimals=0):
+    return f"{value:,.{decimals}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+# ------------------------------------------------------------------
+# Hero
+# ------------------------------------------------------------------
+st.markdown('<div class="hero-title">Von Neumann Discovery Lab</div>', unsafe_allow_html=True)
 st.markdown(
-    "<div class='subheadline'>Vom starren Rechenautomaten zum universell programmierbaren Rechner – "
-    "und warum dieser Paradigmenwechsel jedes Software-Update möglich macht.</div>",
+    '<div class="hero-subtitle">Erlebe, wie ein Rechner sein Verhalten durch Software verändert – und warum genau das den Computer zum Universalwerkzeug macht.</div>',
     unsafe_allow_html=True
 )
 
-hero_col1, hero_col2 = st.columns([4, 5])
-with hero_col1:
+col_intro, col_scene = st.columns([5, 4])
+
+with col_intro:
     st.markdown(
         """
-        <div class="story-card">
+        <div class="mission-card">
+            <h3>Mission Brief</h3>
             <p>
-                Stellen wir uns die 1940er-Jahre vor: Computer waren raumfüllende Maschinen, verdrahtet für genau eine einzige Aufgabe.
-                John von Neumann skizzierte einen radikalen Bruch – ein universeller Rechner, der sein Verhalten
-                <strong>durch ein Programm im Speicher</strong> ändern kann. Heute ist das selbstverständlich, damals war es Revolution.
+                1945 beschrieb John von Neumann erstmals den Entwurf eines <span class="highlight">universell programmierbaren Rechners</span>.
+                Programme und Daten teilen sich ein gemeinsames Speicherwerk, die CPU holt Instruktion für Instruktion, 
+                und Ein-/Ausgabe binden den Rechner an die Außenwelt.
             </p>
             <p>
-                Diese Experience führt Schritt für Schritt zu genau dieser Kernidee:
-                <ul style="margin-top:0.5rem;">
-                    <li>Wie die Architektur aufgebaut ist</li>
-                    <li>Wie der Fetch-Decode-Execute-Zyklus funktioniert</li>
-                    <li>Wie simples Umprogrammieren den Output verändert</li>
-                    <li>Wo die Grenzen (Von-Neumann-Bottleneck) liegen</li>
-                </ul>
+                Diese App führt dich durch vier Kontrollräume:
+            </p>
+            <ul>
+                <li><strong>Blueprint Deck</strong> – die Architektur in einem holografischen Schaltplan.</li>
+                <li><strong>Instruction Bay</strong> – der Fetch-Decode-Execute-Zyklus in Bewegung.</li>
+                <li><strong>Reprogramming Workshop</strong> – du tauschst Programme im Speicher aus und beobachtest neue Ergebnisse.</li>
+                <li><strong>EVA Composer</strong> – du entwirfst neue Aufgaben, indem du Ein-/Ausgabe und Programm kombinierst.</li>
+            </ul>
+            <p>
+                Kernbotschaft: <span class="highlight">Weil Programme nur Speicherinhalt sind, lässt sich derselbe Rechner jederzeit neu erfinden.</span>
             </p>
         </div>
         """,
         unsafe_allow_html=True
     )
-with hero_col2:
+
+with col_scene:
     render_cover(
-        "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80",
-        "Früher starre Verdrahtung, heute universelle Programmierbarkeit – Von-Neumann machte den Unterschied."
+        "https://images.unsplash.com/photo-1580894897200-9c9e7c7825b0?auto=format&fit=crop&w=1600&q=80",
+        "Ein Kontrollraum der frühen Computerära – Programmwechsel bedeutete plötzlich neue Aufgaben statt neuer Hardware."
     )
 
 st.markdown("---")
 
-# Tabs
-tab1, tab2, tab3, tab4 = st.tabs([
-    "🧩 Architektur begreifen",
-    "🔁 Befehlskreislauf erleben",
-    "🛠️ Umprogrammieren & Effekt sehen",
-    "🚦 Bottleneck simulieren"
-])
+# ------------------------------------------------------------------
+# Navigation
+# ------------------------------------------------------------------
+st.sidebar.title("🎚️ Steuerkonsole")
+mode = st.sidebar.radio(
+    "Wähle ein Modul",
+    [
+        "Blueprint Deck",
+        "Instruction Bay",
+        "Reprogramming Workshop",
+        "EVA Composer"
+    ],
+    index=0
+)
 
-# ------------------------------------------------------
-# Tab 1: Architektur begreifen
-# ------------------------------------------------------
-with tab1:
-    render_intro(
-        "Du betrittst das Rechenzentrum der 1950er: Vor dir steht der frische Prototyp des IAS-Rechners. "
-        "Hier erklärt dir eine Ingenieurin, wie CPU, Hauptspeicher, Ein-/Ausgabe und Datenwege zusammenspielen "
-        "und warum das Programm plötzlich in magnetischen Trommeln gespeichert wird."
-    )
-
-    render_cover(
-        "https://images.unsplash.com/photo-1581092334607-1e7e6fef3a22?auto=format&fit=crop&w=1600&q=80",
-        "Vier Hauptkomponenten, unendlich viele Programme: das Herz der Von-Neumann-Architektur."
-    )
-
+# ------------------------------------------------------------------
+# Modul 1 – Blueprint Deck
+# ------------------------------------------------------------------
+if mode == "Blueprint Deck":
     st.markdown(
         """
-        <div class="story-card">
-            <p><strong>Key Insight:</strong> Programm und Daten liegen gemeinsam im gleichen Speicher. 
-            Der Prozessor holt sich beides, interpretiert Befehl für Befehl und kann dadurch völlig neue Aufgaben übernehmen – ohne Hardware umzubauen.</p>
+        <div class="intro-block">
+            Du stehst vor einem transparenten Display, das den inneren Aufbau eines Von-Neumann-Rechners zeigt. 
+            Jede Komponente leuchtet auf, sobald du sie ansteuerst, und die Datenwege verbinden die Stationen.
         </div>
         """,
         unsafe_allow_html=True
-    )
-
-    component = st.radio(
-        "Wähle eine Komponente für eine immersive Erklärung:",
-        ["Zentralprozessor (CPU)", "Hauptspeicher", "Ein-/Ausgabe", "Datenwege (Busse)"],
-        horizontal=True
-    )
-
-    explanations = {
-        "Zentralprozessor (CPU)": {
-            "text": (
-                "Der CPU-Kern interpretiert Befehle aus dem Speicher, führt Rechnungen aus und steuert, welcher Schritt als nächstes kommt. "
-                "Er besteht typischerweise aus Rechenwerk (ALU), Registersatz und Steuerwerk."
-            ),
-            "diagram": ["Fetch Steuerbefehle aus Speicher", "Dekodiere Opcode", "Steuere ALU/IO", "Schreibe Ergebnisse zurück"]
-        },
-        "Hauptspeicher": {
-            "text": (
-                "Im RAM (früher Trommelspeicher) liegen sowohl die Daten als auch das Programm nebeneinander. "
-                "Der Clou: Tausche den Programmbereich aus, und der gleiche Rechner kann plötzlich ein anderes Problem lösen."
-            ),
-            "diagram": ["Adresse 0001: Befehl LOAD", "Adresse 0002: Befehl ADD", "Adresse 0003: Daten 42", "Adresse 0004: Daten 17"]
-        },
-        "Ein-/Ausgabe": {
-            "text": (
-                "Tastatur, Lochstreifenleser, Drucker – all diese Geräte liefern Daten an den Speicher oder empfangen Ergebnisse. "
-                "Über spezielle I/O-Befehle interagiert das Programm mit der Außenwelt."
-            ),
-            "diagram": ["Eingabe -> Speicher", "CPU verarbeitet", "Ausgabe -> Anzeige"]
-        },
-        "Datenwege (Busse)": {
-            "text": (
-                "Adressbus, Datenbus, Steuerbus verbinden die Einheiten. "
-                "Sie transportieren, welcher Speicherplatz angesprochen wird, welche Bits transportiert werden und wann eine Aktion startet."
-            ),
-            "diagram": ["Adressbus (sagt WO)", "Datenbus (liefert WAS)", "Steuerbus (steuert WANN)"]
-        }
-    }
-
-    st.markdown(f"<div class='highlight-bubble'>{explanations[component]['text']}</div>", unsafe_allow_html=True)
-
-    colA, colB = st.columns([3, 2])
-    with colA:
-        st.subheader("Informationsfluss visualisiert")
-        df_flow = pd.DataFrame({
-            "Schritt": explanations[component]["diagram"],
-            "Position": list(range(1, len(explanations[component]["diagram"]) + 1))
-        })
-        fig_flow = px.area(
-            df_flow,
-            x="Position",
-            y=[1]*len(df_flow),
-            hover_data=["Schritt"],
-            color_discrete_sequence=["#4ce3f7"]
-        )
-        fig_flow.update_layout(
-            showlegend=False,
-            xaxis=dict(showgrid=False, visible=False),
-            yaxis=dict(showgrid=False, visible=False),
-            height=220,
-            margin=dict(l=30, r=30, t=30, b=20),
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)'
-        )
-        st.plotly_chart(fig_flow, use_container_width=True)
-    with colB:
-        st.metric("Programm im Speicher?", "Ja – und jederzeit austauschbar")
-        st.caption("Genau das unterscheidet den Von-Neumann-Rechner von verdrahteten Spezialmaschinen.")
-
-# ------------------------------------------------------
-# Tab 2: Fetch-Decode-Execute Zyklus
-# ------------------------------------------------------
-with tab2:
-    render_intro(
-        "Der Operator startet das Programm. Die Kontrolllampe blinkt: Fetch – Decode – Execute. "
-        "Du blickst dem Steuerwerk beim Arbeiten über die Schulter und siehst, wie jedes Bit seinen Platz hat."
     )
 
     render_cover(
         "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1600&q=80",
-        "Instruktionszyklus als Herzschlag des Rechners."
+        "Von außen nur ein Kasten – innen eine orchestrierte Choreographie aus Speicher, Prozessor und Datenwegen."
     )
 
     st.markdown(
         """
         <div class="story-card">
-            Jede Instruktion durchläuft drei Hauptphasen. Sobald der Speicher ein neues Wort liefert, 
-            kann der Rechner – dank Von-Neumann – völlig andere Aktionen ausführen.
+            Ein Von-Neumann-Rechner besteht aus wenigen Bausteinen:
+            <ul>
+                <li><strong>Zentralprozessor (CPU)</strong> – interpretiert Instruktionen, steuert ALU und Register.</li>
+                <li><strong>Hauptspeicher</strong> – hält Programm und Daten zugleich bereit.</li>
+                <li><strong>I/O-Subsystem</strong> – verbindet Tastatur, Touch, Sensoren, Anzeigen.</li>
+                <li><strong>Datenwege (Busse)</strong> – transportieren Adressen, Steuerimpulse und Daten.</li>
+            </ul>
+            Dass Programme im selben Speicher liegen wie Daten, macht einen beliebigen Funktionswechsel ohne Hardwareeingriff möglich.
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    cycle_steps = [
-        {
-            "name": "1. Fetch",
-            "description": "Der Program Counter (PC) zeigt auf die nächste Speicheradresse. Der Befehl wird in das Instruktionsregister geladen.",
-            "visual": ["PC -> Adresse 0004", "Speicher[0004] -> Instruktionsregister"]
-        },
-        {
-            "name": "2. Decode",
-            "description": "Das Steuerwerk interpretiert den Opcode und bereitet die beteiligten Funktionseinheiten vor.",
-            "visual": ["Opcode 01 = LOAD", "Operand = Adresse 0010", "Steuerleitungen setzen sich"]
-        },
-        {
-            "name": "3. Execute",
-            "description": "Die ALU oder I/O-Einheit führt die Aktion aus. Ergebnis kann in Register, Speicher oder Gerät fließen.",
-            "visual": ["ALU addiert Register A + Speicher[0010]", "Ergebnis -> Register A"]
-        },
-        {
-            "name": "4. Write-Back",
-            "description": "Der Prozessor speichert das Ergebnis und erhöht den Program Counter – bereit für den nächsten Befehl.",
-            "visual": ["Register A -> Speicher[0012]", "PC = PC + 1"]
-        }
+    component_descriptions = {
+        "Zentralprozessor": ("Befehlszentrale", "Steuerwerk, Rechenwerk (ALU) und Register interpretieren Code – Befehl für Befehl."),
+        "Hauptspeicher": ("Programm & Daten", "RAM oder Magnettrommel speichern Instruktionen und Werte in demselben Adressraum."),
+        "Eingabe": ("Input-Kanal", "Geräte wie Tastatur, Scanner oder Netzwerk liefern Daten in den Speicher."),
+        "Ausgabe": ("Output-Kanal", "Displays, Drucker oder Aktoren geben Ergebnisse an die Außenwelt."),
+        "Bus-System": ("Datenwege", "Adress-, Daten- und Steuerbus koordinieren, was wohin fließt und wann etwas passiert.")
+    }
+
+    selection = st.segmentation.selectbox(
+        "Welche Komponente willst du hervorheben?",
+        list(component_descriptions.keys()),
+        key="component_select"
+    ) if hasattr(st, "segmentation") else st.selectbox(
+        "Welche Komponente willst du hervorheben?",
+        list(component_descriptions.keys()),
+        index=0
+    )
+
+    # Plotly Blueprint
+    nodes = {
+        "Eingabe": (-1, 1),
+        "Ausgabe": (1, 1),
+        "Hauptspeicher": (0, 1.5),
+        "Zentralprozessor": (0, 0),
+        "ALU": (-0.5, -0.6),
+        "Steuerwerk": (0.5, -0.6),
+        "Register": (0, -1.2),
+        "Bus-System": (0, 0.6)
+    }
+
+    edges = [
+        ("Eingabe", "Bus-System"),
+        ("Ausgabe", "Bus-System"),
+        ("Bus-System", "Hauptspeicher"),
+        ("Bus-System", "Zentralprozessor"),
+        ("Zentralprozessor", "ALU"),
+        ("Zentralprozessor", "Steuerwerk"),
+        ("Zentralprozessor", "Register"),
+        ("Register", "Bus-System"),
+        ("Hauptspeicher", "Zentralprozessor")
     ]
 
-    step_idx = st.slider("Schritt im Instruktionszyklus", 0, len(cycle_steps) - 1, 0)
-    current_step = cycle_steps[step_idx]
+    fig = go.Figure()
 
-    col1, col2 = st.columns([2, 3])
-    with col1:
-        st.subheader(current_step["name"])
-        st.markdown(f"<div class='highlight-bubble'>{current_step['description']}</div>", unsafe_allow_html=True)
-    with col2:
-        fig_cycle = px.timeline(
-            pd.DataFrame({
-                "Phase": current_step["visual"],
-                "Start": np.arange(len(current_step["visual"])),
-                "Ende": np.arange(1, len(current_step["visual"]) + 1)
-            }),
-            x_start="Start",
-            x_end="Ende",
-            y="Phase",
-            color_discrete_sequence=["#8bff8e"]
-        )
-        fig_cycle.update_layout(
-            height=260,
-            xaxis=dict(visible=False),
-            yaxis=dict(autorange="reversed"),
-            showlegend=False,
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(l=0, r=20, t=40, b=20)
-        )
-        st.plotly_chart(fig_cycle, use_container_width=True)
+    for edge in edges:
+        x0, y0 = nodes[edge[0]]
+        x1, y1 = nodes[edge[1]]
+        fig.add_trace(go.Scatter(
+            x=[x0, x1], y=[y0, y1],
+            mode="lines",
+            line=dict(color="rgba(67, 231, 254, 0.5)", width=3),
+            hoverinfo="none"
+        ))
 
-    st.caption("Sobald im Speicher ein neuer Befehl liegt, ändert sich der Ablauf – ohne Hardware-Tausch.")
+    for name, (x, y) in nodes.items():
+        is_selected = name.startswith(selection) or (selection == "Bus-System" and name == "Bus-System")
+        fig.add_trace(go.Scatter(
+            x=[x],
+            y=[y],
+            mode="markers+text",
+            marker=dict(
+                size=22 if is_selected else 16,
+                color="#43e7fe" if is_selected else "rgba(86,120,235,0.6)",
+                line=dict(color="#ffffff", width=1.5)
+            ),
+            text=[name],
+            textposition="top center",
+            hoverinfo="text",
+            opacity=1 if is_selected else 0.7
+        ))
 
-# ------------------------------------------------------
-# Tab 3: Umprogrammieren & Effekt sehen
-# ------------------------------------------------------
-with tab3:
-    render_intro(
-        "Du sitzt an der Konsole des Röhrenrechners. Mit wenigen Bytes im Speicher bestimmst du, "
-        "ob das System summiert oder multipliziert. Die Techniker:innen schauen gespannt zu: "
-        "Kann wirklich derselbe Rechner zwei völlig verschiedene Probleme lösen?"
+    fig.update_layout(
+        height=520,
+        showlegend=False,
+        xaxis=dict(showgrid=False, zeroline=False, visible=False),
+        yaxis=dict(showgrid=False, zeroline=False, visible=False),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=0, r=0, t=40, b=0),
+        title="Architektur-Hologramm"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown(
+        f"""
+        <div class="story-card">
+            <h4>{component_descriptions[selection][0]}</h4>
+            <p>{component_descriptions[selection][1]}</p>
+            <p><span class="highlight">Warum das zählt:</span> Tausche den Code im Speicher aus – die CPU interpretiert automatisch eine neue Befehlsfolge. 
+            Ohne Von-Neumann-Architektur gäbe es keine universell programmierbaren Maschinen.</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# ------------------------------------------------------------------
+# Modul 2 – Instruction Bay
+# ------------------------------------------------------------------
+elif mode == "Instruction Bay":
+    st.markdown(
+        """
+        <div class="intro-block">
+            Im Instruction Bay siehst du den Herzschlag eines Von-Neumann-Rechners. 
+            Der Program Counter holt das nächste Wort aus dem Speicher, das Steuerwerk interpretiert es, 
+            und die ALU führt es aus. Wechsle Schritte und beobachte, wie sich Daten quer durchs System bewegen.
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
     render_cover(
-        "https://images.unsplash.com/photo-1526498460520-4c246339dccb?auto=format&fit=crop&w=1600&q=80",
-        "Ein neues Programm, ein neuer Zweck – exakt das ist die Von-Neumann-Idee."
+        "https://images.unsplash.com/photo-1517430816045-df4b7de11d1d?auto=format&fit=crop&w=1600&q=80",
+        "Instruktionszyklus als Taktgeber – Fetch, Decode, Execute und weiter zum nächsten Befehl."
     )
 
-    st.markdown(
-        """
-        <div class="story-card">
-            Lade ein kleines Programm in den Speicher, führe es aus – ändere nur einen Befehl, erhalte ein komplett anderes Ergebnis.
-            So demonstrierst du Studierenden die Macht des programmierbaren Rechners.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    mock_program = pd.DataFrame({
+        "Adresse": ["0000", "0001", "0002", "0003", "0004", "0005"],
+        "Maschinenwort": ["LOAD A0", "ADD A1", "STORE A2", "LOAD A3", "OUT", "HALT"],
+        "Kommentar": [
+            "Hole Startwert",
+            "Addiere Eingabe",
+            "Speichere Zwischenergebnis",
+            "Lade Ausgabepegel",
+            "Gib Resultat aus",
+            "Stop"
+        ]
+    })
 
-    st.subheader("Mini-Assembler Playground")
-    st.caption("Instruktionssatz: LOAD (L), STORE (S), ADD (A), MUL (M), OUT (O)")
+    st.table(mock_program)
 
-    default_program = [
-        {"Adresse": "000", "Instruktion": "L A0"},     # Lade Wert aus Speicheradresse A0
-        {"Adresse": "001", "Instruktion": "A A1"},     # Addiere Wert an Adresse A1
-        {"Adresse": "002", "Instruktion": "O"},        # Ausgabe
-        {"Adresse": "003", "Instruktion": "HALT"}
+    cycle = [
+        {
+            "phase": "Fetch",
+            "beschreibung": "Program Counter adressiert 0000, Befehl wird aus dem Hauptspeicher gezogen.",
+            "aktionen": ["PC ➜ Adressbus", "Speicherwort 0000 ➜ Instruktionsregister"],
+            "pc": 0
+        },
+        {
+            "phase": "Decode",
+            "beschreibung": "Steuerwerk zerlegt „LOAD A0“: Opcode = LOAD, Operand = Adresse A0.",
+            "aktionen": ["Opcode erkannt", "Adressfeld in Adressregister", "Steuerleitungen gesetzt"],
+            "pc": 0
+        },
+        {
+            "phase": "Execute",
+            "beschreibung": "ALU/Datapath lädt den Wert an Adresse A0 in den Akku (ACC).",
+            "aktionen": ["Adressbus ➜ A0", "Datenbus ➜ 42", "ACC = 42"],
+            "pc": 0
+        },
+        {
+            "phase": "Write Back & Increment",
+            "beschreibung": "Ergebnis liegt in Registern, PC geht zur nächsten Instruktion.",
+            "aktionen": ["ACC hält neuen Wert", "PC = PC + 1 = 0001"],
+            "pc": 1
+        },
+        {
+            "phase": "Nächster Zyklus",
+            "beschreibung": "Die Pipeline startet erneut für Adresse 0001.",
+            "aktionen": ["Fetch ADD A1", "Decode + ALU", "Write Back"],
+            "pc": 1
+        }
     ]
-    program_df = pd.DataFrame(default_program)
 
-    edited_program = st.experimental_data_editor(program_df, num_rows="dynamic", key="program_editor")
+    step = st.slider("Instruktionsschritt", 0, len(cycle) - 1, 0)
+    current = cycle[step]
 
-    data_memory = {
-        "A0": st.number_input("Wert an Adresse A0", -100, 100, 7),
-        "A1": st.number_input("Wert an Adresse A1", -100, 100, 5),
-        "A2": st.number_input("Wert an Adresse A2", -100, 100, 3)
-    }
+    col_phase, col_viz = st.columns([1.6, 2.4])
 
-    def run_program(program, data):
-        acc = 0
-        output = None
-        history = []
-        for _, row in program.iterrows():
-            instr = str(row["Instruktion"]).strip().upper()
-            history.append(instr)
-            if instr.startswith("L"):
-                addr = instr.split()[1]
-                acc = data.get(addr, 0)
-            elif instr.startswith("A"):
-                addr = instr.split()[1]
-                acc += data.get(addr, 0)
-            elif instr.startswith("M"):
-                addr = instr.split()[1]
-                acc *= data.get(addr, 0)
-            elif instr.startswith("S"):
-                addr = instr.split()[1]
-                data[addr] = acc
-            elif instr.startswith("O"):
-                output = acc
-            elif instr == "HALT":
-                break
-        return output, history
-
-    output_value, history = run_program(edited_program, data_memory.copy())
-
-    col_prog, col_history = st.columns([2, 3])
-    with col_prog:
-        st.metric("Programm-Output", output_value if output_value is not None else "kein OUT")
-        st.caption("Ändere oben Instruktionen oder Werte. Ein einziger Opcode-Wechsel zeigt den Effekt.")
+    with col_phase:
         st.markdown(
-            """
-            <div class="highlight-bubble">
-                Tipp: Ersetze Zeile 001 durch <code>M A1</code> – derselbe Computer rechnet jetzt ein Produkt.
+            f"""
+            <div class="story-card">
+                <h3>{current['phase']}</h3>
+                <p>{current['beschreibung']}</p>
+                <div class="code-bubble">
+                    PC = {current["pc"]:04d}<br>
+                    Instruktionsregister = "{mock_program.iloc[current["pc"], 1]}"<br>
+                    ACC = ? (wird im Execute-Schritt gesetzt)
+                </div>
             </div>
             """,
             unsafe_allow_html=True
         )
-    with col_history:
-        st.subheader("Instruction Trace")
-        st.code("\n".join(history) if history else "Programm leer", language="text")
 
-    st.caption("Genau deshalb spricht man vom Universaltalent: Programme sind nur Daten – und damit jederzeit austauschbar.")
+    with col_viz:
+        fig = go.Figure()
+        y_positions = np.linspace(1, 0, len(current["aktionen"]))
+        fig.add_trace(go.Bar(
+            x=[1] * len(current["aktionen"]),
+            y=current["aktionen"],
+            orientation="h",
+            marker=dict(color=["#38f9d7"] + ["#43e7fe"] * (len(current["aktionen"]) - 1), opacity=0.85),
+            width=0.4
+        ))
+        fig.update_layout(
+            height=280,
+            xaxis=dict(showticklabels=False),
+            yaxis=dict(title="", automargin=True),
+            margin=dict(l=0, r=20, t=30, b=30),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            showlegend=False,
+            title="Mikroaktionen in dieser Phase"
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-# ------------------------------------------------------
-# Tab 4: Von-Neumann-Bottleneck simulieren
-# ------------------------------------------------------
-with tab4:
-    render_intro(
-        "In der Maschinenhalle fällt dir auf: Die CPU langweilt sich, weil der Speicher so langsam liefert. "
-        "Das wird später als Von-Neumann-Bottleneck bekannt – der Datenbus wird zum Engpass."
+    st.info("Sobald im Speicher an Adresse 0000 ein anderer Befehl liegt, ändert sich der gesamte Ablauf. Genau das meint „programmierbar“.")
+
+# ------------------------------------------------------------------
+# Modul 3 – Reprogramming Workshop
+# ------------------------------------------------------------------
+elif mode == "Reprogramming Workshop":
+    st.markdown(
+        """
+        <div class="intro-block">
+            Willkommen im Speicherlabor. Hier tauscht du Instruktionen aus, lädst andere Werte in den Speicher 
+            und siehst sofort, wie sich derselbe Rechner völlig anders verhält. 
+            Programme sind hier nichts weiter als Daten – editierbar wie eine Tabelle.
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
     render_cover(
-        "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80",
-        "CPU vs. Speicherbandbreite – wer bestimmt das Tempo?"
+        "https://images.unsplash.com/photo-1526379879527-8559ecfcaec0?auto=format&fit=crop&w=1600&q=80",
+        "Programmwechsel ohne Schraubenzieher: Tape raus, neues Programm rein – und schon löst die Maschine eine neue Aufgabe."
     )
 
     st.markdown(
         """
         <div class="story-card">
-            Die Leistungsfähigkeit eines Von-Neumann-Rechners hängt stark davon ab, wie schnell Befehle und Daten aus dem Speicher zur CPU gelangen.
-            Durchforste mit den Reglern, wie sich Durchsatz und Auslastung verändern.
+            Befehle liegen als nummerierte Wörter im Speicher. Die CPU läuft Zeile für Zeile (fetch) und führt sie aus (execute). 
+            Du kannst die Tabelle editieren, neue Instruktionen hinzufügen oder mit Vorlagen beginnen.
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    cpu_speed = st.slider("CPU-Geschwindigkeit (Millionen Instruktionen pro Sekunde)", 1, 400, 120, step=10)
-    memory_bandwidth = st.slider("Speicher-Bandbreite (MB/s)", 10, 800, 80, step=10)
-    bytes_per_instruction = st.select_slider(
-        "Bytes pro Instruktion + Datenbedarf",
-        options=[4, 8, 12, 16, 24, 32],
-        value=16
+    templates = {
+        "Addition zweier Zahlen": [
+            {"Adresse": "0000", "Instruktion": "LOAD A0"},
+            {"Adresse": "0001", "Instruktion": "ADD A1"},
+            {"Adresse": "0002", "Instruktion": "OUT"},
+            {"Adresse": "0003", "Instruktion": "HALT"}
+        ],
+        "Celsius ➜ Fahrenheit": [
+            {"Adresse": "0000", "Instruktion": "LOAD A0"},
+            {"Adresse": "0001", "Instruktion": "MUL A1"},
+            {"Adresse": "0002", "Instruktion": "DIV A2"},
+            {"Adresse": "0003", "Instruktion": "ADD A3"},
+            {"Adresse": "0004", "Instruktion": "OUT"},
+            {"Adresse": "0005", "Instruktion": "HALT"}
+        ],
+        "Subtraktion mit Zweig": [
+            {"Adresse": "0000", "Instruktion": "LOAD A0"},
+            {"Adresse": "0001", "Instruktion": "SUB A1"},
+            {"Adresse": "0002", "Instruktion": "JZ 5"},
+            {"Adresse": "0003", "Instruktion": "OUT"},
+            {"Adresse": "0004", "Instruktion": "HALT"},
+            {"Adresse": "0005", "Instruktion": "LOAD A2"},
+            {"Adresse": "0006", "Instruktion": "OUT"},
+            {"Adresse": "0007", "Instruktion": "HALT"}
+        ]
+    }
+
+    if "program_table" not in st.session_state:
+        st.session_state.program_table = pd.DataFrame(templates["Addition zweier Zahlen"])
+
+    template_choice = st.selectbox("Vorlage laden", list(templates.keys()), index=0)
+    if st.button("Vorlage übernehmen", type="primary"):
+        st.session_state.program_table = pd.DataFrame(templates[template_choice])
+        st.success("Programm in den Speicher gelegt – du kannst sofort editieren.")
+
+    st.write("### Speicherbereich (Instruktionsspeicher)")
+    program_editor = st.data_editor(
+        st.session_state.program_table,
+        hide_index=True,
+        num_rows="dynamic",
+        key="program_editor"
     )
 
-    required_bandwidth = cpu_speed * bytes_per_instruction
-    utilization = min(memory_bandwidth / required_bandwidth, 1.0) * 100
-    stall_percentage = 100 - utilization
+    st.write("---")
+    st.write("### Datenspeicher")
+    col_mem1, col_mem2, col_mem3, col_mem4 = st.columns(4)
+    data_memory = {
+        "A0": col_mem1.number_input("A0", value=5.0, step=1.0),
+        "A1": col_mem2.number_input("A1", value=3.0, step=1.0),
+        "A2": col_mem3.number_input("A2", value=5.0, step=1.0),
+        "A3": col_mem4.number_input("A3", value=32.0, step=1.0),
+        "A4": st.number_input("A4", value=10.0, step=1.0)
+    }
 
-    colA, colB, colC = st.columns(3)
-    colA.metric("Instruktionsbedarf an Bandbreite", f"{required_bandwidth:.0f} MB/s")
-    colB.metric("Verfügbare Bandbreite", f"{memory_bandwidth} MB/s")
-    colC.metric("CPU-Auslastung", f"{utilization:.0f} %")
+    st.caption("Hinweis: Instruktionen unterstützen LOAD, STORE, ADD, SUB, MUL, DIV, SET, OUT, HALT, JUMP, JZ.")
 
-    st.caption(f"Stall-Zeit durch Wartezyklen: {stall_percentage:.0f} %")
+    def run_program(df: pd.DataFrame, data_mem: dict):
+        acc = 0.0
+        pc = 0
+        output_values = []
+        history = []
+        program = df.reset_index(drop=True)
+        safety_counter = 0
 
-    samples = np.linspace(4, 32, 50)
-    throughput = np.minimum(memory_bandwidth / samples, cpu_speed)
-    df_bottleneck = pd.DataFrame({
-        "Bytes pro Instruktion": samples,
-        "Mögliche Instruktionen/s": throughput
-    })
-    fig_bottle = px.line(
-        df_bottleneck,
-        x="Bytes pro Instruktion",
-        y="Mögliche Instruktionen/s",
-        labels={"Mögliche Instruktionen/s": "Instruktionen pro Sekunde (Mio.)"},
-        color_discrete_sequence=["#4ce3f7"]
+        while pc < len(program):
+            safety_counter += 1
+            if safety_counter > 100:
+                history.append("Abbruch: zu viele Schritte (mögliche Endlosschleife).")
+                break
+
+            instruction = str(program.loc[pc, "Instruktion"]).strip()
+            if not instruction:
+                history.append(f"PC {pc:02d}: (leer) -> weiter")
+                pc += 1
+                continue
+
+            parts = instruction.split()
+            opcode = parts[0].upper()
+            operand = parts[1] if len(parts) > 1 else None
+            history.append(f"PC {pc:02d}: {instruction}")
+
+            try:
+                if opcode == "LOAD":
+                    acc = float(data_mem.get(operand, 0))
+                elif opcode == "STORE":
+                    data_mem[operand] = acc
+                elif opcode == "ADD":
+                    acc += float(data_mem.get(operand, 0))
+                elif opcode == "SUB":
+                    acc -= float(data_mem.get(operand, 0))
+                elif opcode == "MUL":
+                    acc *= float(data_mem.get(operand, 0))
+                elif opcode == "DIV":
+                    divisor = float(data_mem.get(operand, 1))
+                    if divisor == 0:
+                        history.append("⚠️ Division durch 0 – Abbruch.")
+                        break
+                    acc /= divisor
+                elif opcode == "SET":
+                    acc = float(operand)
+                elif opcode == "OUT":
+                    output_values.append(acc)
+                elif opcode == "HALT":
+                    history.append("Programm stoppt mit HALT.")
+                    break
+                elif opcode == "JUMP":
+                    pc = int(operand)
+                    continue
+                elif opcode == "JZ":
+                    if acc == 0:
+                        pc = int(operand)
+                        continue
+                else:
+                    history.append(f"Unbekannter Opcode: {opcode}")
+                    break
+            except Exception as exc:
+                history.append(f"Fehler bei Instruktion '{instruction}': {exc}")
+                break
+
+            pc += 1
+
+        return output_values, history, acc, data_mem
+
+    if st.button("Programm ausführen", type="primary"):
+        outputs, trace, final_acc, new_memory = run_program(program_editor, data_memory.copy())
+        st.session_state.execution_trace = trace
+        st.session_state.execution_output = outputs
+        st.session_state.final_acc = final_acc
+        st.session_state.after_memory = new_memory
+    else:
+        st.caption("Klicke auf „Programm ausführen“, um CPU und Speicherzyklus zu beobachten.")
+
+    if "execution_trace" in st.session_state:
+        st.write("### Laufzeit-Log")
+        st.code("\n".join(st.session_state.execution_trace), language="text")
+
+        st.write("### Ausgabe")
+        if st.session_state.execution_output:
+            st.success(f"OUT-Register: {', '.join(format_number(x, 2) for x in st.session_state.execution_output)}")
+        else:
+            st.info("Kein OUT-Befehl ausgeführt (oder Ergebnisliste leer).")
+
+        st.write("### Finaler Akkumulator & Datenspeicher")
+        st.metric("Akkumulator (ACC)", format_number(st.session_state.final_acc, 2))
+        st.write(pd.DataFrame(st.session_state.after_memory.items(), columns=["Adresse", "Wert"]))
+
+        st.markdown(
+            """
+            <div class="story-card">
+                <strong>Interpretation:</strong> Ändere nur eine Instruktion oder tausche Datenwerte aus – sofort reagiert die Maschine anders.
+                Genau so zeigt sich das Von-Neumann-Prinzip in der Praxis.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+# ------------------------------------------------------------------
+# Modul 4 – EVA Composer
+# ------------------------------------------------------------------
+elif mode == "EVA Composer":
+    st.markdown(
+        """
+        <div class="intro-block">
+            EVA steht für <strong>Eingabe – Verarbeitung – Ausgabe</strong>. 
+            Im Composer stellst du neue Aufgaben zusammen, indem du ein Input-Gerät, ein Software-Skript und eine Ausgabe kombinierst. 
+            Schon kleine Änderungen im Programmslot erzeugen komplett neue Szenarien – der Rechner bleibt derselbe.
+        </div>
+        """,
+        unsafe_allow_html=True
     )
-    fig_bottle.add_scatter(
-        x=[bytes_per_instruction],
-        y=[min(memory_bandwidth / bytes_per_instruction, cpu_speed)],
-        mode="markers",
-        marker=dict(size=12, color="#8bff8e"),
-        name="aktuelles Setup"
+
+    render_cover(
+        "https://images.unsplash.com/photo-1527430253228-e93688616381?auto=format&fit=crop&w=1600&q=80",
+        "Der selbe Rechner, unendlich viele Einsätze – solange du den richtigen EVA-Workflow programmierst."
     )
-    fig_bottle.update_layout(
-        height=320,
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font_color="#e8ecff"
-    )
-    st.plotly_chart(fig_bottle, use_container_width=True)
 
     st.markdown(
         """
-        <div class="highlight-bubble">
-            Lösungsideen: Caches, Prefetching, Harvard-Architektur, Parallelisierung. 
-            Aber das Grundprinzip bleibt: Programme bleiben im Speicher und sind jederzeit austauschbar.
+        <div class="story-card">
+            Input, Processing, Output. Alle drei stehen auf einer gemeinsamen Datenbasis. 
+            Von Neumann machte Programme zu Speicherinhalt – du musst nur austauschen, was im Verarbeitungsschritt passiert.
         </div>
         """,
         unsafe_allow_html=True
     )
 
-# ------------------------------------------------------
+    col_input, col_program, col_output = st.columns(3)
+
+    input_device = col_input.selectbox(
+        "Eingabequelle",
+        [
+            "Tastatur (Text)",
+            "Sensorpaket (Temperatur & Luftfeuchte)",
+            "Kamera (Bilddaten)",
+            "Netzwerkpaket (JSON)"
+        ]
+    )
+
+    program_logic = col_program.selectbox(
+        "Programm im Speicher",
+        [
+            "Text-Parser (Schlüsselwörter zählen)",
+            "Klima-Analyse (Taupunkt berechnen)",
+            "Bildfilter (Kanten hervorheben)",
+            "API-Mapper (Daten strukturieren)"
+        ]
+    )
+
+    output_device = col_output.selectbox(
+        "Ausgabe",
+        [
+            "Konsole / Terminal",
+            "Dashboard-Widget",
+            "Motorsteuerung",
+            "Push-Nachricht aufs Smartphone"
+        ]
+    )
+
+    st.write("---")
+    st.write("### EVA-Skript Synthese")
+
+    eva_steps = [
+        ("Eingabe", input_device),
+        ("Verarbeitung", program_logic),
+        ("Ausgabe", output_device)
+    ]
+
+    eva_df = pd.DataFrame(eva_steps, columns=["Phase", "Auswahl"])
+    fig = px.funnel(
+        eva_df,
+        y="Phase",
+        x=[1, 1, 1],
+        text="Auswahl",
+        color="Phase",
+        color_discrete_sequence=["#38f9d7", "#43e7fe", "#6476ff"]
+    )
+    fig.update_traces(textposition="inside", textfont_size=14)
+    fig.update_layout(
+        height=360,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=40, r=40, t=40, b=40),
+        showlegend=False
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Narrative Ergebnisbeschreibung
+    scenario_map = {
+        ("Tastatur (Text)", "Text-Parser (Schlüsselwörter zählen)", "Konsole / Terminal"):
+            "Der Computer verwandelt sich in ein Analysewerkzeug für Live-Interviews. Jede Eingabe wird sofort auf Buzzwords geprüft.",
+        ("Sensorpaket (Temperatur & Luftfeuchte)", "Klima-Analyse (Taupunkt berechnen)", "Dashboard-Widget"):
+            "Aus dem Rechner wird eine Wetterstation: Sensorwerte gehen hinein, ein kleines Programm berechnet Taupunkt & Trend und zeigt sie im Dashboard.",
+        ("Kamera (Bilddaten)", "Bildfilter (Kanten hervorheben)", "Motorsteuerung"):
+            "In der Fertigungskette erkennt der Rechner Kanten und leitet den Roboterarm – reine Software entscheidet, welche Werkstücke sortiert werden.",
+        ("Netzwerkpaket (JSON)", "API-Mapper (Daten strukturieren)", "Push-Nachricht aufs Smartphone"):
+            "Der Rechner wird zur Benachrichtigungszentrale: API-Daten kommen rein, das Programm filtert die relevanten Felder und schickt Alerts."
+    }
+
+    scenario = scenario_map.get((input_device, program_logic, output_device),
+                                "Neue Kombination – der Rechner erfüllt eine völlig andere Rolle, ohne dass du ihn neu verkabeln musst.")
+
+    st.markdown(
+        f"""
+        <div class="story-card">
+            <h4>Dein EVA-Setup</h4>
+            <p>{scenario}</p>
+            <p><span class="highlight">Takeaway:</span> Ändert sich nur der Programmslot, ändert sich das Verhalten des gesamten Systems. 
+            Genau das ist der revolutionäre Gedanke hinter Von Neumann.</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.write("### Datenwege & Taktung justieren")
+    bus_width = st.slider("Busbreite (Bit)", 4, 128, 32, step=4)
+    memory_latency = st.slider("Speicherzugriffszeit (ns)", 5, 500, 80, step=5)
+    instruction_size = st.select_slider("Instruktionswortgröße (Bit)", [8, 16, 24, 32, 48, 64], value=16)
+
+    bandwidth = (bus_width / instruction_size) * (1_000 / memory_latency)
+    st.metric("Maximale Instruktionen pro µs", format_number(bandwidth, 2))
+    st.caption("Busbreite + Speicherlatenz bestimmen, wie schnell neue Instruktionen in die CPU gelangen – ein Hinweis auf den Von-Neumann-Bottleneck.")
+
+# ------------------------------------------------------------------
 # Abschluss
-# ------------------------------------------------------
+# ------------------------------------------------------------------
 st.markdown("---")
 st.markdown(
     """
-    <div class="footer-message">
-        Von Neumann hat uns nicht nur eine Architektur geschenkt – sondern die Freiheit, jede Maschine
-        allein durch Code in etwas Neues zu verwandeln.
+    <div class="footer">
+        Von-Neumann-Rechner leben davon, dass Programme nur Speicherinhalte sind. 
+        Sobald du den Code austauschst, erfindet sich die Maschine neu – ohne einen einzigen Schraubenschlüssel.
     </div>
     """,
     unsafe_allow_html=True
